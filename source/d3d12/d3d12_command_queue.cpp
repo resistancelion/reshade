@@ -40,8 +40,10 @@ bool D3D12CommandQueue::check_and_upgrade_interface(REFIID riid)
 			IUnknown *new_interface = nullptr;
 			if (FAILED(_orig->QueryInterface(riid, reinterpret_cast<void **>(&new_interface))))
 				return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(DEBUG) << "Upgraded ID3D12CommandQueue" << _interface_version << " object " << this << " to ID3D12CommandQueue" << version << '.';
+#endif
 #endif
 			_orig->Release();
 			_orig = static_cast<ID3D12CommandQueue *>(new_interface);
@@ -93,11 +95,13 @@ ULONG   STDMETHODCALLTYPE D3D12CommandQueue::Release()
 		_downlevel->Release();
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for ID3D12CommandQueue" << _interface_version << " object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed ID3D12CommandQueue" << _interface_version << " object " << this << ".";
+#endif
 #endif
 	delete this;
 

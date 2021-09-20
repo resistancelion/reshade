@@ -97,8 +97,9 @@ reshade::d3d12::runtime_d3d12::runtime_d3d12(ID3D12Device *device, ID3D12Command
 			if (DXGI_ADAPTER_DESC desc; SUCCEEDED(dxgi_adapter->GetDesc(&desc)))
 			{
 				_vendor_id = desc.VendorId, _device_id = desc.DeviceId;
-
+#ifndef LOG_DISABLE_ALL
 				LOG(INFO) << "Running on " << desc.Description;
+#endif
 			}
 		}
 	}
@@ -476,10 +477,12 @@ bool reshade::d3d12::runtime_d3d12::capture_screenshot(uint8_t *buffer) const
 {
 	if (_color_bit_depth != 8 && _color_bit_depth != 10)
 	{
+#ifndef LOG_DISABLE_ALL
 		if (const char *format_string = format_to_string(_backbuffer_format); format_string != nullptr)
 			LOG(ERROR) << "Screenshots are not supported for back buffer format " << format_string << '!';
 		else
 			LOG(ERROR) << "Screenshots are not supported for back buffer format " << _backbuffer_format << '!';
+#endif
 		return false;
 	}
 
@@ -498,8 +501,10 @@ bool reshade::d3d12::runtime_d3d12::capture_screenshot(uint8_t *buffer) const
 	com_ptr<ID3D12Resource> intermediate;
 	if (HRESULT hr = _device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&intermediate)); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create system memory texture for screenshot capture! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << desc.Width;
+#endif
 		return false;
 	}
 	intermediate->SetName(L"ReShade screenshot texture");
@@ -688,7 +693,9 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 		effect_data.signature = create_root_signature(desc);
 		if (effect_data.signature == nullptr)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create root signature for effect file '" << effect.source_file << "'!";
+#endif
 			return false;
 		}
 	}
@@ -706,8 +713,10 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 
 		if (HRESULT hr = _device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&effect_data.cb)); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create constant buffer for effect file '" << effect.source_file << "'! HRESULT is " << hr << '.';
 			LOG(DEBUG) << "> Details: Width = " << desc.Width;
+#endif
 			return false;
 		}
 		effect_data.cb->SetName(L"ReShade constant buffer");
@@ -827,7 +836,9 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 
 				if (HRESULT hr = _device->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pass_data.pipeline)); FAILED(hr))
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Failed to create compute pipeline for pass " << pass_index << " in technique '" << technique.name << "'! HRESULT is " << hr << '.';
+#endif
 					return false;
 				}
 			}
@@ -992,7 +1003,9 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 
 				if (HRESULT hr = _device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pass_data.pipeline)); FAILED(hr))
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Failed to create graphics pipeline for pass " << pass_index << " in technique '" << technique.name << "'! HRESULT is " << hr << '.';
+#endif
 					return false;
 				}
 			}
@@ -1002,7 +1015,9 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 			{
 				if (info.texture_binding >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Cannot bind texture '" << info.texture_name << "' since it exceeds the maximum number of allowed resource slots in " << "D3D12" << " (" << info.texture_binding << ", allowed are up to " << D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT << ").";
+#endif
 					return false;
 				}
 
@@ -1046,7 +1061,9 @@ bool reshade::d3d12::runtime_d3d12::init_effect(size_t index)
 			{
 				if (info.binding >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Cannot bind storage '" << info.unique_name << "' since it exceeds the maximum number of allowed resource slots in " << "D3D12" << " (" << info.binding << ", allowed are up to " << D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT << ").";
+#endif
 					return false;
 				}
 
@@ -1191,8 +1208,10 @@ bool reshade::d3d12::runtime_d3d12::init_texture(texture &texture)
 
 	if (HRESULT hr = _device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_SHADER_RESOURCE, texture.render_target ? &clear_value : nullptr, IID_PPV_ARGS(&impl->resource)); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << desc.Width << ", Height = " << desc.Height << ", Levels = " << desc.MipLevels << ", Format = " << desc.Format << ", Flags = " << std::hex << desc.Flags << std::dec;
+#endif
 		return false;
 	}
 
@@ -1258,8 +1277,10 @@ void reshade::d3d12::runtime_d3d12::upload_texture(const texture &texture, const
 	com_ptr<ID3D12Resource> intermediate;
 	if (HRESULT hr = _device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&intermediate)); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create system memory texture for updating texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << desc.Width << ", Height = " << desc.Height;
+#endif
 		return;
 	}
 	intermediate->SetName(L"ReShade upload texture");
@@ -1289,7 +1310,9 @@ void reshade::d3d12::runtime_d3d12::upload_texture(const texture &texture, const
 		break;
 	default:
 		unsupported_format = true;
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Texture upload is not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'!";
+#endif
 		break;
 	}
 

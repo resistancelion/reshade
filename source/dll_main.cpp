@@ -814,13 +814,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
 		g_reshade_base_path = get_base_path(); // Needs to happen after DLL and executable path are set (since those are referenced in 'get_base_path')
 
 		reshade::log::open_log_file(g_reshade_base_path / g_reshade_dll_path.filename().replace_extension(L".log"));
-
+#ifndef LOG_DISABLE_ALL
 #  ifdef WIN64
 		LOG(INFO) << "Initializing crosire's ReShade version '" VERSION_STRING_FILE "' (64-bit) built on '" VERSION_DATE " " VERSION_TIME "' loaded from " << g_reshade_dll_path << " into " << g_target_executable_path << " ...";
 #  else
 		LOG(INFO) << "Initializing crosire's ReShade version '" VERSION_STRING_FILE "' (32-bit) built on '" VERSION_DATE " " VERSION_TIME "' loaded from " << g_reshade_dll_path << " into " << g_target_executable_path << " ...";
 #  endif
-
+#endif
 #  ifndef NDEBUG
 		g_exception_handler_handle = AddVectoredExceptionHandler(1, [](PEXCEPTION_POINTERS ex) -> LONG {
 			// Ignore debugging and some common language exceptions
@@ -904,11 +904,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
 		reshade::hooks::register_module(get_system_path() / L"dxgi.dll");
 		reshade::hooks::register_module(get_system_path() / L"opengl32.dll");
 		// Do not register Vulkan hooks, since Vulkan layering mechanism is used instead
-
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Initialized.";
+#endif
 		break;
 	case DLL_PROCESS_DETACH:
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Exiting ...";
+#endif
 
 		reshade::hooks::uninstall();
 
@@ -924,8 +927,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
 #  ifndef NDEBUG
 		RemoveVectoredExceptionHandler(g_exception_handler_handle);
 #  endif
-
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Finished exiting.";
+#endif
 		break;
 	}
 

@@ -336,7 +336,9 @@ bool reshade::d3d12::state_tracking_context::update_depthstencil_clear_texture(D
 
 	if (HRESULT hr = _device->CreateCommittedResource(&heap_props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&_depthstencil_clear_texture)); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create depth-stencil texture! HRESULT is " << hr << '.';
+#endif
 		return false;
 	}
 	_depthstencil_clear_texture->SetName(L"ReShade depth copy texture");

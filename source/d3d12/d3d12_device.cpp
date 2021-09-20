@@ -45,8 +45,10 @@ bool D3D12Device::check_and_upgrade_interface(REFIID riid)
 			IUnknown *new_interface = nullptr;
 			if (FAILED(_orig->QueryInterface(riid, reinterpret_cast<void **>(&new_interface))))
 				return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(DEBUG) << "Upgraded ID3D12Device" << _interface_version << " object " << this << " to ID3D12Device" << version << '.';
+#endif
 #endif
 			_orig->Release();
 			_orig = static_cast<ID3D12Device *>(new_interface);
@@ -100,11 +102,13 @@ ULONG   STDMETHODCALLTYPE D3D12Device::Release()
 		_downlevel->Release();
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for ID3D12Device" << _interface_version << " object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed ID3D12Device" << _interface_version << " object " << this << ".";
+#endif
 #endif
 	delete this;
 
@@ -134,11 +138,12 @@ UINT    STDMETHODCALLTYPE D3D12Device::GetNodeCount()
 }
 HRESULT STDMETHODCALLTYPE D3D12Device::CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC *pDesc, REFIID riid, void **ppCommandQueue)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "ID3D12Device::CreateCommandQueue" << '(' << "this = " << this << ", pDesc = " << pDesc << ", riid = " << riid << ", ppCommandQueue = " << ppCommandQueue << ')' << " ...";
-
+#endif
 	if (pDesc == nullptr || ppCommandQueue == nullptr)
 		return E_INVALIDARG;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping command queue description:";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
 	LOG(INFO) << "  | Parameter                               | Value                                   |";
@@ -148,11 +153,13 @@ HRESULT STDMETHODCALLTYPE D3D12Device::CreateCommandQueue(const D3D12_COMMAND_QU
 	LOG(INFO) << "  | Flags                                   | " << std::setw(39) << std::hex << pDesc->Flags << std::dec << " |";
 	LOG(INFO) << "  | NodeMask                                | " << std::setw(39) << std::hex << pDesc->NodeMask << std::dec << " |";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
-
+#endif
 	const HRESULT hr = _orig->CreateCommandQueue(pDesc, riid, ppCommandQueue);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D12Device::CreateCommandQueue" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -161,8 +168,10 @@ HRESULT STDMETHODCALLTYPE D3D12Device::CreateCommandQueue(const D3D12_COMMAND_QU
 	// Upgrade to the actual interface version requested here
 	if (command_queue_proxy->check_and_upgrade_interface(riid))
 	{
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(INFO) << "> Returning ID3D12CommandQueue" << command_queue_proxy->_interface_version << " object " << command_queue_proxy << '.';
+#endif
 #endif
 		*ppCommandQueue = command_queue_proxy;
 	}
@@ -190,7 +199,9 @@ HRESULT STDMETHODCALLTYPE D3D12Device::CreateCommandList(UINT nodeMask, D3D12_CO
 	const HRESULT hr = _orig->CreateCommandList(nodeMask, type, pCommandAllocator, pInitialState, riid, ppCommandList);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D12Device::CreateCommandList" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -388,7 +399,9 @@ HRESULT STDMETHODCALLTYPE D3D12Device::CreateCommandList1(UINT NodeMask, D3D12_C
 	const HRESULT hr = static_cast<ID3D12Device4 *>(_orig)->CreateCommandList1(NodeMask, Type, Flags, riid, ppCommandList);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D12Device4::CreateCommandList1" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 

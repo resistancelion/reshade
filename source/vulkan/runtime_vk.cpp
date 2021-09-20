@@ -148,8 +148,9 @@ reshade::vulkan::runtime_vk::runtime_vk(VkDevice device, VkPhysicalDevice physic
 	// NVIDIA has a custom driver version scheme, so extract the proper minor version from it
 	const uint32_t driver_minor_version = _vendor_id == 0x10DE ?
 		(_device_props.driverVersion >> 14) & 0xFF : VK_VERSION_MINOR(_device_props.driverVersion);
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Running on " << _device_props.deviceName << " Driver " << VK_VERSION_MAJOR(_device_props.driverVersion) << '.' << driver_minor_version;
-
+#endif
 	// Find a supported stencil format
 	const VkFormat possible_stencil_formats[] = {
 		VK_FORMAT_S8_UINT,
@@ -661,7 +662,9 @@ bool reshade::vulkan::runtime_vk::capture_screenshot(uint8_t *buffer) const
 {
 	if (_color_bit_depth != 8 && _color_bit_depth != 10)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Screenshots are not supported for back buffer format " << _backbuffer_format << '!';
+#endif
 		return false;
 	}
 
@@ -1142,7 +1145,9 @@ bool reshade::vulkan::runtime_vk::init_effect(size_t index)
 				const VkResult res = vk.CreateComputePipelines(_device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pass_data.pipeline);
 				if (res != VK_SUCCESS)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Failed to create compute pipeline for pass " << pass_index << " in technique '" << technique.name << "'! Vulkan error code is " << res << '.';
+#endif
 					return false;
 				}
 			}
@@ -1421,7 +1426,9 @@ bool reshade::vulkan::runtime_vk::init_effect(size_t index)
 				const VkResult res = vk.CreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pass_data.pipeline);
 				if (res != VK_SUCCESS)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Failed to create graphics pipeline for pass " << pass_index << " in technique '" << technique.name << "'! Vulkan error code is " << res << '.';
+#endif
 					return false;
 				}
 			}
@@ -1753,7 +1760,9 @@ void reshade::vulkan::runtime_vk::upload_texture(const texture &texture, const u
 			break;
 		default:
 			mapped_data = nullptr;
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Texture upload is not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'!";
+#endif
 			break;
 		}
 
@@ -2112,9 +2121,10 @@ VkImage reshade::vulkan::runtime_vk::create_image(uint32_t width, uint32_t heigh
 	const VkResult res = vmaCreateImage(_alloc, &create_info, &alloc_info, &image, &alloc, nullptr);
 	if (res != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create image! Vulkan error code is " << res << '.';
 		LOG(DEBUG) << "> Details: Width = " << width << ", Height = " << height << ", Levels = " << levels << ", Format = " << format << ", Usage = " << std::hex << usage << std::dec;
-
+#endif
 		if (out_mem != nullptr)
 			*out_mem = VK_NULL_HANDLE;
 		return VK_NULL_HANDLE;
@@ -2150,9 +2160,10 @@ VkBuffer reshade::vulkan::runtime_vk::create_buffer(VkDeviceSize size,
 	const VkResult res = vmaCreateBuffer(_alloc, &create_info, &alloc_info, &buffer, &alloc, nullptr);
 	if (res != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create buffer! Vulkan error code is " << res << '.';
 		LOG(DEBUG) << "> Details: Size = " << size << ", Usage = " << std::hex << usage << std::dec;
-
+#endif
 		if (out_mem != nullptr)
 			*out_mem = VK_NULL_HANDLE;
 		return VK_NULL_HANDLE;

@@ -12,6 +12,7 @@ extern thread_local bool g_in_dxgi_runtime;
 
 HOOK_EXPORT HRESULT WINAPI D3D11CreateDevice(IDXGIAdapter *pAdapter, D3D_DRIVER_TYPE DriverType, HMODULE Software, UINT Flags, const D3D_FEATURE_LEVEL *pFeatureLevels, UINT FeatureLevels, UINT SDKVersion, ID3D11Device **ppDevice, D3D_FEATURE_LEVEL *pFeatureLevel, ID3D11DeviceContext **ppImmediateContext)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "D3D11CreateDevice" << '('
 		<<   "pAdapter = " << pAdapter
 		<< ", DriverType = " << DriverType
@@ -25,7 +26,7 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDevice(IDXGIAdapter *pAdapter, D3D_DRIVER_
 		<< ", ppImmediateContext = " << ppImmediateContext
 		<< ')' << " ...";
 	LOG(INFO) << "> Passing on to " << "D3D11CreateDeviceAndSwapChain" << ':';
-
+#endif
 	// The D3D runtime does this internally anyway, so to avoid duplicate hooks, always pass on to D3D11CreateDeviceAndSwapChain
 	return D3D11CreateDeviceAndSwapChain(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, SDKVersion, nullptr, nullptr, ppDevice, pFeatureLevel, ppImmediateContext);
 }
@@ -36,7 +37,7 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 	if (g_in_dxgi_runtime)
 		return reshade::hooks::call(D3D11CreateDeviceAndSwapChain)(
 			pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain, ppDevice, pFeatureLevel, ppImmediateContext);
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "D3D11CreateDeviceAndSwapChain" << '('
 		<<   "pAdapter = " << pAdapter
 		<< ", DriverType = " << DriverType
@@ -51,7 +52,7 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 		<< ", pFeatureLevel = " << pFeatureLevel
 		<< ", ppImmediateContext = " << ppImmediateContext
 		<< ')' << " ...";
-
+#endif
 #ifndef NDEBUG
 	// Remove flag that prevents turning on the debug layer
 	Flags &= ~D3D11_CREATE_DEVICE_PREVENT_ALTERING_LAYER_SETTINGS_FROM_REGISTRY;
@@ -63,15 +64,17 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 	HRESULT hr = reshade::hooks::call(D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, SDKVersion, nullptr, nullptr, ppDevice, &FeatureLevel, nullptr);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "D3D11CreateDeviceAndSwapChain" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
 	if (pFeatureLevel != nullptr) // Copy feature level value to application variable if the argument exists
 		*pFeatureLevel = FeatureLevel;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Using feature level " << std::hex << FeatureLevel << std::dec << '.';
-
+#endif
 	// It is valid for the device out parameter to be NULL if the application wants to check feature level support, so just return early in that case
 	if (ppDevice == nullptr)
 	{
@@ -87,15 +90,20 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 
 	// Create device proxy unless this is a software device (used by D2D for example)
 	D3D11Device *device_proxy = nullptr;
+
 	if (DriverType == D3D_DRIVER_TYPE_WARP || DriverType == D3D_DRIVER_TYPE_REFERENCE)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping device because the driver type is 'D3D_DRIVER_TYPE_WARP' or 'D3D_DRIVER_TYPE_REFERENCE'.";
+#endif
 	}
 	else if (DXGI_ADAPTER_DESC adapter_desc;
 		pAdapter != nullptr && SUCCEEDED(pAdapter->GetDesc(&adapter_desc)) &&
 		adapter_desc.VendorId == 0x1414 /* Microsoft */ && adapter_desc.DeviceId == 0x8C /* Microsoft Basic Render Driver */)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping device because it uses the Microsoft Basic Render Driver.";
+#endif
 	}
 	else
 	{
@@ -124,9 +132,9 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 		com_ptr<IDXGIFactory> factory;
 		hr = adapter->GetParent(IID_PPV_ARGS(&factory));
 		assert(SUCCEEDED(hr));
-
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "> Calling " << "IDXGIFactory::CreateSwapChain" << ':';
-
+#endif
 		hr = factory->CreateSwapChain(device, const_cast<DXGI_SWAP_CHAIN_DESC *>(pSwapChainDesc), ppSwapChain);
 	}
 
@@ -134,8 +142,10 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 	{
 		if (device_proxy != nullptr)
 		{
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(INFO) << "Returning ID3D11Device0 object " << device_proxy << " and IDXGIDevice1 object " << device_proxy->_dxgi_device << '.';
+#endif
 #endif
 			*ppDevice = device_proxy;
 		}

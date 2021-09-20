@@ -52,9 +52,10 @@ ULONG   STDMETHODCALLTYPE D3D11CommandList::Release()
 		return _orig->Release(), ref;
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0)
 		LOG(WARN) << "Reference count for ID3D11CommandList object " << this << " is inconsistent.";
-
+#endif
 	delete this;
 
 	return 0;

@@ -71,8 +71,9 @@ reshade::d3d11::runtime_d3d11::runtime_d3d11(ID3D11Device *device, IDXGISwapChai
 			if (DXGI_ADAPTER_DESC desc; SUCCEEDED(dxgi_adapter->GetDesc(&desc)))
 			{
 				_vendor_id = desc.VendorId, _device_id = desc.DeviceId;
-
+#ifndef LOG_DISABLE_ALL
 				LOG(INFO) << "Running on " << desc.Description;
+#endif
 			}
 		}
 	}
@@ -347,10 +348,12 @@ bool reshade::d3d11::runtime_d3d11::capture_screenshot(uint8_t *buffer) const
 {
 	if (_color_bit_depth != 8 && _color_bit_depth != 10)
 	{
+#ifndef LOG_DISABLE_ALL
 		if (const char *format_string = format_to_string(_backbuffer_format); format_string != nullptr)
 			LOG(ERROR) << "Screenshots are not supported for back buffer format " << format_string << '!';
 		else
 			LOG(ERROR) << "Screenshots are not supported for back buffer format " << _backbuffer_format << '!';
+#endif
 		return false;
 	}
 
@@ -368,8 +371,10 @@ bool reshade::d3d11::runtime_d3d11::capture_screenshot(uint8_t *buffer) const
 	com_ptr<ID3D11Texture2D> intermediate;
 	if (HRESULT hr = _device->CreateTexture2D(&desc, nullptr, &intermediate); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create system memory texture for screenshot capture! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << desc.Width << ", Height = " << desc.Height << ", Format = " << desc.Format;
+#endif
 		return false;
 	}
 	set_debug_name(intermediate.get(), L"ReShade screenshot texture");
@@ -540,7 +545,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 
 		if (FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create shader for entry point '" << entry_point.name << "'! HRESULT is " << hr << '.';
+#endif
 			return false;
 		}
 	}
@@ -556,8 +563,10 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 
 		if (HRESULT hr = _device->CreateBuffer(&desc, &initial_data, &effect_data.cb); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create constant buffer for effect file '" << effect.source_file << "'! HRESULT is " << hr << '.';
 			LOG(DEBUG) << "> Details: Width = " << desc.ByteWidth;
+#endif
 			return false;
 		}
 		set_debug_name(effect_data.cb.get(), L"ReShade constant buffer");
@@ -574,7 +583,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 	{
 		if (info.binding >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Cannot bind sampler '" << info.unique_name << "' since it exceeds the maximum number of allowed sampler slots in " << "D3D11" << " (" << info.binding << ", allowed are up to " << D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT << ").";
+#endif
 			return false;
 		}
 
@@ -603,8 +614,10 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 				com_ptr<ID3D11SamplerState> sampler;
 				if (HRESULT hr = _device->CreateSamplerState(&desc, &sampler); FAILED(hr))
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Failed to create sampler state for sampler '" << info.unique_name << "'! HRESULT is " << hr << '.';
 					LOG(DEBUG) << "> Details: Filter = " << desc.Filter << ", AddressU = " << desc.AddressU << ", AddressV = " << desc.AddressV << ", AddressW = " << desc.AddressW << ", MipLODBias = " << desc.MipLODBias << ", MinLOD = " << desc.MinLOD << ", MaxLOD = " << desc.MaxLOD;
+#endif
 					return false;
 				}
 
@@ -667,8 +680,10 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 					{
 						if (HRESULT hr = _device->CreateRenderTargetView(tex_impl->texture.get(), &rtv_desc, &tex_impl->rtv[srgb_index]); FAILED(hr))
 						{
+#ifndef LOG_DISABLE_ALL
 							LOG(ERROR) << "Failed to create render target view for texture '" << pass_info.render_target_names[k] << "'! HRESULT is " << hr << '.';
 							LOG(DEBUG) << "> Details: Format = " << rtv_desc.Format << ", ViewDimension = " << rtv_desc.ViewDimension;
+#endif
 							return false;
 						}
 					}
@@ -727,7 +742,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 
 					if (HRESULT hr = _device->CreateBlendState(&desc, &pass_data.blend_state); FAILED(hr))
 					{
+#ifndef LOG_DISABLE_ALL
 						LOG(ERROR) << "Failed to create blend state for pass " << pass_index << " in technique '" << technique.name << "'! HRESULT is " << hr << '.';
+#endif
 						return false;
 					}
 				}
@@ -779,7 +796,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 
 					if (HRESULT hr = _device->CreateDepthStencilState(&desc, &pass_data.depth_stencil_state); FAILED(hr))
 					{
+#ifndef LOG_DISABLE_ALL
 						LOG(ERROR) << "Failed to create depth-stencil state for pass " << pass_index << " in technique '" << technique.name << "'! HRESULT is " << hr << '.';
+#endif
 						return false;
 					}
 				}
@@ -790,7 +809,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 			{
 				if (info.texture_binding >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Cannot bind texture '" << info.texture_name << "' since it exceeds the maximum number of allowed resource slots in " << "D3D11" << " (" << info.texture_binding << ", allowed are up to " << D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT << ").";
+#endif
 					return false;
 				}
 
@@ -805,7 +826,9 @@ bool reshade::d3d11::runtime_d3d11::init_effect(size_t index)
 			{
 				if (info.binding >= max_uav_bindings)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(ERROR) << "Cannot bind storage '" << info.unique_name << "' since it exceeds the maximum number of allowed resource slots in " << "D3D11" << " (" << info.binding << ", allowed are up to " << max_uav_bindings << ").";
+#endif
 					return false;
 				}
 
@@ -937,8 +960,10 @@ bool reshade::d3d11::runtime_d3d11::init_texture(texture &texture)
 
 	if (HRESULT hr = _device->CreateTexture2D(&desc, initial_data.data(), &impl->texture); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << desc.Width << ", Height = " << desc.Height << ", Levels = " << desc.MipLevels << ", Format = " << desc.Format << ", BindFlags = " << std::hex << desc.BindFlags << std::dec;
+#endif
 		return false;
 	}
 
@@ -954,8 +979,10 @@ bool reshade::d3d11::runtime_d3d11::init_texture(texture &texture)
 
 	if (HRESULT hr = _device->CreateShaderResourceView(impl->texture.get(), &srv_desc, &impl->srv[0]); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create shader resource view for texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Format = " << srv_desc.Format << ", ViewDimension = " << srv_desc.ViewDimension << ", Levels = " << srv_desc.Texture2D.MipLevels;
+#endif
 		return false;
 	}
 
@@ -965,8 +992,10 @@ bool reshade::d3d11::runtime_d3d11::init_texture(texture &texture)
 	{
 		if (HRESULT hr = _device->CreateShaderResourceView(impl->texture.get(), &srv_desc, &impl->srv[1]); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create shader resource view for texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 			LOG(DEBUG) << "> Details: Format = " << srv_desc.Format << ", ViewDimension = " << srv_desc.ViewDimension << ", Levels = " << srv_desc.Texture2D.MipLevels;
+#endif
 			return false;
 		}
 	}
@@ -984,8 +1013,10 @@ bool reshade::d3d11::runtime_d3d11::init_texture(texture &texture)
 
 		if (HRESULT hr = _device->CreateUnorderedAccessView(impl->texture.get(), &uav_desc, &impl->uav); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create unordered access view for texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 			LOG(DEBUG) << "> Details: Format = " << uav_desc.Format << ", ViewDimension = " << uav_desc.ViewDimension << ", Slice = " << uav_desc.Texture2D.MipSlice;
+#endif
 			return false;
 		}
 	}
@@ -1021,7 +1052,9 @@ void reshade::d3d11::runtime_d3d11::upload_texture(const texture &texture, const
 		upload_pitch = texture.width * 4;
 		break;
 	default:
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Texture upload is not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'!";
+#endif
 		return;
 	}
 
@@ -1557,7 +1590,9 @@ void reshade::d3d11::runtime_d3d11::update_depth_texture_bindings(com_ptr<ID3D11
 
 		if (HRESULT hr = _device->CreateShaderResourceView(_depth_texture.get(), &srv_desc, &_depth_texture_srv); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create depth-stencil resource view! HRESULT is " << hr << '.';
+#endif
 		}
 		else
 		{

@@ -12,7 +12,7 @@
 // These are defined in d3d9.h, but we want to use them as function names below
 #undef IDirect3D9_CreateDevice
 #undef IDirect3D9Ex_CreateDeviceEx
-
+#ifndef LOG_DISABLE_ALL
 static void dump_format(D3DFORMAT format)
 {
 	const char *format_string = nullptr;
@@ -40,8 +40,10 @@ static void dump_format(D3DFORMAT format)
 	else
 		LOG(INFO) << "  | BackBufferFormat                        | " << std::setw(39) << format << " |";
 }
+#endif
 void dump_and_modify_present_parameters(D3DPRESENT_PARAMETERS &pp, IDirect3D9 *d3d, UINT adapter_index)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping presentation parameters:";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
 	LOG(INFO) << "  | Parameter                               | Value                                   |";
@@ -61,7 +63,7 @@ void dump_and_modify_present_parameters(D3DPRESENT_PARAMETERS &pp, IDirect3D9 *d
 	LOG(INFO) << "  | FullScreen_RefreshRateInHz              | " << std::setw(39) << pp.FullScreen_RefreshRateInHz << " |";
 	LOG(INFO) << "  | PresentationInterval                    | " << std::setw(39) << std::hex << pp.PresentationInterval << std::dec << " |";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
-
+#endif
 	if (reshade::global_config().get("APP", "ForceVSync"))
 	{
 		pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
@@ -124,14 +126,18 @@ static void init_device_proxy(T *&device, D3DDEVTYPE device_type, const D3DPRESE
 	// TODO: Make this configurable, since it prevents ReShade from being applied to video players.
 	if (pp.Flags & D3DPRESENTFLAG_VIDEO)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping device because it uses a video swap chain.";
+#endif
 		return;
 	}
 #endif
 
 	if (device_type == D3DDEVTYPE_NULLREF)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping device because the device type is 'D3DDEVTYPE_NULLREF'.";
+#endif
 		return;
 	}
 
@@ -155,14 +161,16 @@ static void init_device_proxy(T *&device, D3DDEVTYPE device_type, const D3DPRESE
 	// Upgrade to extended interface if available to prevent compatibility issues with some games
 	com_ptr<IDirect3DDevice9Ex> deviceex;
 	device_proxy->QueryInterface(IID_PPV_ARGS(&deviceex));
-
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning IDirect3DDevice9" << (device_proxy->_extended_interface ? "Ex" : "") << " object " << device << '.';
+#endif
 #endif
 }
 
 HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS *pPresentationParameters, IDirect3DDevice9 **ppReturnedDeviceInterface)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDirect3D9::CreateDevice" << '('
 		<<   "this = " << pD3D
 		<< ", Adapter = " << Adapter
@@ -172,13 +180,15 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 		<< ", pPresentationParameters = " << pPresentationParameters
 		<< ", ppReturnedDeviceInterface = " << ppReturnedDeviceInterface
 		<< ')' << " ...";
-
+#endif
 	if (pPresentationParameters == nullptr)
 		return D3DERR_INVALIDCALL;
 
 	if ((BehaviorFlags & D3DCREATE_ADAPTERGROUP_DEVICE) != 0)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Adapter group devices are unsupported.";
+#endif
 		return D3DERR_NOTAVAILABLE;
 	}
 
@@ -188,7 +198,9 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 	const bool use_software_rendering = (BehaviorFlags & D3DCREATE_SOFTWARE_VERTEXPROCESSING) != 0;
 	if (use_software_rendering)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "> Replacing 'D3DCREATE_SOFTWARE_VERTEXPROCESSING' flag with 'D3DCREATE_MIXED_VERTEXPROCESSING' to allow for hardware rendering ...";
+#endif
 		BehaviorFlags = (BehaviorFlags & ~D3DCREATE_SOFTWARE_VERTEXPROCESSING) | D3DCREATE_MIXED_VERTEXPROCESSING;
 	}
 
@@ -201,7 +213,9 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "IDirect3D9::CreateDevice" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -212,6 +226,7 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 
 HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS *pPresentationParameters, D3DDISPLAYMODEEX *pFullscreenDisplayMode, IDirect3DDevice9Ex **ppReturnedDeviceInterface)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDirect3D9Ex::CreateDeviceEx" << '('
 		<<   "this = " << pD3D
 		<< ", Adapter = " << Adapter
@@ -222,13 +237,15 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 		<< ", pFullscreenDisplayMode = " << pFullscreenDisplayMode
 		<< ", ppReturnedDeviceInterface = " << ppReturnedDeviceInterface
 		<< ')' << " ...";
-
+#endif
 	if (pPresentationParameters == nullptr)
 		return D3DERR_INVALIDCALL;
 
 	if ((BehaviorFlags & D3DCREATE_ADAPTERGROUP_DEVICE) != 0)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Adapter group devices are unsupported.";
+#endif
 		return D3DERR_NOTAVAILABLE;
 	}
 
@@ -241,7 +258,9 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 	const bool use_software_rendering = (BehaviorFlags & D3DCREATE_SOFTWARE_VERTEXPROCESSING) != 0;
 	if (use_software_rendering)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "> Replacing 'D3DCREATE_SOFTWARE_VERTEXPROCESSING' flag with 'D3DCREATE_MIXED_VERTEXPROCESSING' to allow for hardware rendering ...";
+#endif
 		BehaviorFlags = (BehaviorFlags & ~D3DCREATE_SOFTWARE_VERTEXPROCESSING) | D3DCREATE_MIXED_VERTEXPROCESSING;
 	}
 
@@ -251,41 +270,52 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 	pPresentationParameters->BackBufferFormat = pp.BackBufferFormat;
 	pPresentationParameters->BackBufferCount = pp.BackBufferCount;
 
+#ifndef LOG_DISABLE_ALL
 	if (FAILED(hr))
 	{
 		LOG(WARN) << "IDirect3D9Ex::CreateDeviceEx" << " failed with error code " << hr << '.';
-		return hr;
+	} else {
+		init_device_proxy(*ppReturnedDeviceInterface, DeviceType, pp, use_software_rendering);
 	}
-
-	init_device_proxy(*ppReturnedDeviceInterface, DeviceType, pp, use_software_rendering);
+#else
+	if (SUCCEEDED(hr))
+		init_device_proxy(*ppReturnedDeviceInterface, DeviceType, pp, use_software_rendering);
+#endif
 
 	return hr;
 }
 
 HOOK_EXPORT IDirect3D9 *WINAPI Direct3DCreate9(UINT SDKVersion)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "Direct3DCreate9" << '(' << "SDKVersion = " << SDKVersion << ')' << " ...";
-
+#endif
 	IDirect3D9 *const res = reshade::hooks::call(Direct3DCreate9)(SDKVersion);
 	if (res == nullptr)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Direct3DCreate9" << " failed!";
+#endif
 		return nullptr;
 	}
 
 	reshade::hooks::install("IDirect3D9::CreateDevice", vtable_from_instance(res), 16, reinterpret_cast<reshade::hook::address>(IDirect3D9_CreateDevice));
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning IDirect3D9 object " << res << '.';
+#endif
 #endif
 	return res;
 }
 
 HOOK_EXPORT     HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD3D)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "Direct3DCreate9Ex" << '(' << "SDKVersion = " << SDKVersion << ", ppD3D = " << ppD3D << ')' << " ...";
-
+#endif
 	const HRESULT hr = reshade::hooks::call(Direct3DCreate9Ex)(SDKVersion, ppD3D);
+#ifndef LOG_DISABLE_ALL
 	if (FAILED(hr))
 	{
 		LOG(WARN) << "Direct3DCreate9Ex" << " failed with error code " << hr << '.';
@@ -295,22 +325,29 @@ HOOK_EXPORT     HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex *
 	reshade::hooks::install("IDirect3D9::CreateDevice", vtable_from_instance(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(IDirect3D9_CreateDevice));
 	reshade::hooks::install("IDirect3D9Ex::CreateDeviceEx", vtable_from_instance(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(IDirect3D9Ex_CreateDeviceEx));
 
-#if RESHADE_VERBOSE_LOG
-	LOG(INFO) << "Returning IDirect3D9Ex object " << *ppD3D << '.';
+
+#else
+	if (SUCCEEDED(hr))
+	{
+		reshade::hooks::install("IDirect3D9::CreateDevice", vtable_from_instance(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(IDirect3D9_CreateDevice));
+		reshade::hooks::install("IDirect3D9Ex::CreateDeviceEx", vtable_from_instance(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(IDirect3D9Ex_CreateDeviceEx));
+	}
 #endif
 	return hr;
 }
 
 HOOK_EXPORT IDirect3D9 *WINAPI Direct3DCreate9on12(UINT SDKVersion, struct D3D9ON12_ARGS *pOverrideList, UINT NumOverrideEntries) // Export ordinal 20
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "Direct3DCreate9on12" << '(' << "SDKVersion = " << SDKVersion << ", pOverrideList = " << pOverrideList << ", NumOverrideEntries = " << NumOverrideEntries << ')' << " ...";
-
+#endif
 	return reshade::hooks::call(Direct3DCreate9on12)(SDKVersion, pOverrideList, NumOverrideEntries);
 }
 
 HOOK_EXPORT     HRESULT WINAPI Direct3DCreate9on12Ex(UINT SDKVersion, struct D3D9ON12_ARGS *pOverrideList, UINT NumOverrideEntries, IDirect3D9Ex **ppOutputInterface) // Export ordinal 21
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "Direct3DCreate9on12Ex" << '(' << "SDKVersion = " << SDKVersion << ", pOverrideList = " << pOverrideList << ", NumOverrideEntries = " << NumOverrideEntries << ", ppOutputInterface = " << ppOutputInterface << ')' << " ...";
-
+#endif
 	return reshade::hooks::call(Direct3DCreate9on12Ex)(SDKVersion, pOverrideList, NumOverrideEntries, ppOutputInterface);
 }

@@ -13,12 +13,15 @@ HOOK_EXPORT HRESULT WINAPI D3D12CreateDevice(
 	REFIID riid,
 	void **ppDevice)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "D3D12CreateDevice" << '(' << "pAdapter = " << pAdapter << ", MinimumFeatureLevel = " << std::hex << MinimumFeatureLevel << std::dec << ", riid = " << riid << ", ppDevice = " << ppDevice << ')' << " ...";
-
+#endif
 	const HRESULT hr = reshade::hooks::call(D3D12CreateDevice)(pAdapter, MinimumFeatureLevel, riid, ppDevice);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "D3D12CreateDevice" << " failed with error code " << std::hex << hr << std::dec << '.';
+#endif
 		return hr;
 	}
 
@@ -31,8 +34,10 @@ HOOK_EXPORT HRESULT WINAPI D3D12CreateDevice(
 	// Upgrade to the actual interface version requested here
 	if (device_proxy->check_and_upgrade_interface(riid))
 	{
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(INFO) << "Returning ID3D12Device" << device_proxy->_interface_version << " object " << device_proxy << '.';
+#endif
 #endif
 		*ppDevice = device_proxy;
 	}

@@ -50,8 +50,10 @@ bool Direct3DSwapChain9::check_and_upgrade_interface(REFIID riid)
 		IDirect3DSwapChain9Ex *new_interface = nullptr;
 		if (FAILED(_orig->QueryInterface(IID_PPV_ARGS(&new_interface))))
 			return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(DEBUG) << "Upgraded IDirect3DSwapChain9 object " << this << " to IDirect3DSwapChain9Ex.";
+#endif
 #endif
 		_orig->Release();
 		_orig = new_interface;
@@ -97,11 +99,13 @@ ULONG   STDMETHODCALLTYPE Direct3DSwapChain9::Release()
 
 	// Only release internal reference after the runtime has been destroyed, so any references it held are cleaned up at this point
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for IDirect3DSwapChain9" << (_extended_interface ? "Ex" : "") << " object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed IDirect3DSwapChain9" << (_extended_interface ? "Ex" : "") << " object " << this << '.';
+#endif
 #endif
 	delete this;
 

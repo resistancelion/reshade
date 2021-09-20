@@ -17,8 +17,9 @@ lockfree_table<VkSurfaceKHR, HWND, 16> s_surface_windows;
 
 VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkInstance *pInstance)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkCreateInstance" << '(' << "pCreateInfo = " << pCreateInfo << ", pAllocator = " << pAllocator << ", pInstance = " << pInstance << ')' << " ...";
-
+#endif
 	assert(pCreateInfo != nullptr && pInstance != nullptr);
 
 	// Look for layer link info if installed as a layer (provided by the Vulkan loader)
@@ -53,22 +54,23 @@ VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, co
 
 	if (trampoline == nullptr) // Unable to resolve next 'vkCreateInstance' function in the call chain
 		return VK_ERROR_INITIALIZATION_FAILED;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping enabled instance extensions:";
 	for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i)
 		LOG(INFO) << "  " << pCreateInfo->ppEnabledExtensionNames[i];
-
+#endif
 	VkApplicationInfo app_info { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 	if (pCreateInfo->pApplicationInfo != nullptr)
 		app_info = *pCreateInfo->pApplicationInfo;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Requesting new Vulkan instance for API version " << VK_VERSION_MAJOR(app_info.apiVersion) << '.' << VK_VERSION_MINOR(app_info.apiVersion) << " ...";
-
+#endif
 	// ReShade requires at least Vulkan 1.1 (for SPIR-V 1.3 compatibility)
 	if (app_info.apiVersion < VK_API_VERSION_1_1)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "> Replacing requested version with 1.1 ...";
-
+#endif
 		app_info.apiVersion = VK_API_VERSION_1_1;
 	}
 
@@ -79,7 +81,7 @@ VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, co
 	const VkResult result = trampoline(&create_info, pAllocator, pInstance);
 	if (result != VK_SUCCESS)
 	{
-		LOG(WARN) << "vkCreateInstance" << " failed with error code " << result << '.';
+		LOG(ERROR) << "vkCreateInstance" << " failed with error code " << result << '.';
 		return result;
 	}
 
@@ -107,17 +109,19 @@ VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, co
 	INIT_INSTANCE_PROC(CreateWin32SurfaceKHR);
 
 	s_instance_dispatch.emplace(dispatch_key_from_handle(instance), dispatch_table);
-
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning Vulkan instance " << instance << '.';
+#endif
 #endif
 	return VK_SUCCESS;
 }
 
 void     VKAPI_CALL vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkDestroyInstance" << '(' << "instance = " << instance << ", pAllocator = " << pAllocator << ')' << " ...";
-
+#endif
 	// Get function pointer before removing it next
 	GET_INSTANCE_DISPATCH_PTR(DestroyInstance, instance);
 	// Remove instance dispatch table since this instance is being destroyed
@@ -128,13 +132,16 @@ void     VKAPI_CALL vkDestroyInstance(VkInstance instance, const VkAllocationCal
 
 VkResult VKAPI_CALL vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkCreateWin32SurfaceKHR" << '(' << "instance = " << instance << ", pCreateInfo = " << pCreateInfo << ", pAllocator = " << pAllocator << ", pSurface = " << pSurface << ')' << " ...";
-
+#endif
 	GET_INSTANCE_DISPATCH_PTR(CreateWin32SurfaceKHR, instance);
 	const VkResult result = trampoline(instance, pCreateInfo, pAllocator, pSurface);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateWin32SurfaceKHR" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -145,8 +152,9 @@ VkResult VKAPI_CALL vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32Su
 
 void     VKAPI_CALL vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkDestroySurfaceKHR" << '(' << "instance = " << instance << ", surface = " << surface << ", pAllocator = " << pAllocator << ')' << " ...";
-
+#endif
 	s_surface_windows.erase(surface);
 
 	GET_INSTANCE_DISPATCH_PTR(DestroySurfaceKHR, instance);

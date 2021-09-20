@@ -61,8 +61,9 @@ reshade::opengl::runtime_gl::runtime_gl()
 
 	const GLubyte *const name = glGetString(GL_RENDERER);
 	const GLubyte *const version = glGetString(GL_VERSION);
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Running on " << name << " using OpenGL " << version;
-
+#endif
 	// Query vendor and device ID from Windows assuming we are running on the primary display device
 	// This is done because the information reported by OpenGL is not always reflecting the actual rendering device (e.g. on NVIDIA Optimus laptops)
 	DISPLAY_DEVICEA dd = { sizeof(dd) };
@@ -659,8 +660,9 @@ bool reshade::opengl::runtime_gl::init_effect(size_t index)
 				glGetProgramInfoLog(pass_data.program, log_size, nullptr, log.data());
 
 				effect.errors += log.data();
-
+#ifndef LOG_DISABLE_ALL
 				LOG(ERROR) << "Failed to link program for pass " << pass_index << " in technique '" << technique.name << "'!";
+#endif
 				success = false;
 				break;
 			}
@@ -1498,7 +1500,9 @@ void reshade::opengl::runtime_gl::update_depth_texture_bindings(state_tracking::
 				_depth_source_width = _depth_source_height = 0;
 				_depth_source_format = GL_NONE;
 
+#ifndef LOG_DISABLE_ALL
 				LOG(ERROR) << "Failed to create depth texture of format " << std::hex << info.format << " with error code " << err << std::dec << '!';
+#endif
 				return;
 			}
 

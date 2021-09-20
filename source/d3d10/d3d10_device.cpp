@@ -59,6 +59,7 @@ ULONG   STDMETHODCALLTYPE D3D10Device::AddRef()
 
 	return InterlockedIncrement(&_ref);
 }
+
 ULONG   STDMETHODCALLTYPE D3D10Device::Release()
 {
 	// Release references to other objects that are coupled with the device
@@ -71,11 +72,13 @@ ULONG   STDMETHODCALLTYPE D3D10Device::Release()
 	_state.reset(true);
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for ID3D10Device1 object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed ID3D10Device1 object " << this << '.';
+#endif
 #endif
 	delete this;
 
@@ -383,8 +386,9 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateTexture2D(const D3D10_TEXTURE2D_DES
 		new_desc.Format = make_dxgi_format_typeless(new_desc.Format);
 		new_desc.BindFlags |= D3D10_BIND_SHADER_RESOURCE;
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateTexture2D(&new_desc, pInitialData, ppTexture2D);
+
 	if (FAILED(hr))
 	{
 		LOG(WARN) << "ID3D10Device::CreateTexture2D" << " failed with error code " << hr << '.';
@@ -405,6 +409,9 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateTexture2D(const D3D10_TEXTURE2D_DES
 	}
 
 	return hr;
+#else
+	return _orig->CreateTexture2D(&new_desc, pInitialData, ppTexture2D);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D10Device::CreateTexture3D(const D3D10_TEXTURE3D_DESC *pDesc, const D3D10_SUBRESOURCE_DATA *pInitialData, ID3D10Texture3D **ppTexture3D)
 {
@@ -446,7 +453,7 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateShaderResourceView(ID3D10Resource *
 			}
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateShaderResourceView(pResource, pDesc, ppSRView);
 	if (FAILED(hr))
 	{
@@ -459,6 +466,9 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateShaderResourceView(ID3D10Resource *
 	}
 
 	return hr;
+#else
+	return  _orig->CreateShaderResourceView(pResource, pDesc, ppSRView);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D10Device::CreateRenderTargetView(ID3D10Resource *pResource, const D3D10_RENDER_TARGET_VIEW_DESC *pDesc, ID3D10RenderTargetView **ppRTView)
 {
@@ -500,7 +510,7 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateDepthStencilView(ID3D10Resource *pR
 			}
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateDepthStencilView(pResource, pDesc, ppDepthStencilView);
 	if (FAILED(hr))
 	{
@@ -513,6 +523,9 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateDepthStencilView(ID3D10Resource *pR
 	}
 
 	return hr;
+#else
+	return _orig->CreateDepthStencilView(pResource, pDesc, ppDepthStencilView);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D10Device::CreateInputLayout(const D3D10_INPUT_ELEMENT_DESC *pInputElementDescs, UINT NumElements, const void *pShaderBytecodeWithInputSignature, SIZE_T BytecodeLength, ID3D10InputLayout **ppInputLayout)
 {
@@ -629,7 +642,7 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateShaderResourceView1(ID3D10Resource 
 			}
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateShaderResourceView1(pResource, pDesc, ppSRView);
 	if (FAILED(hr))
 	{
@@ -642,6 +655,9 @@ HRESULT STDMETHODCALLTYPE D3D10Device::CreateShaderResourceView1(ID3D10Resource 
 	}
 
 	return hr;
+#else
+	return _orig->CreateShaderResourceView1(pResource, pDesc, ppSRView);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D10Device::CreateBlendState1(const D3D10_BLEND_DESC1 *pBlendStateDesc, ID3D10BlendState1 **ppBlendState)
 {

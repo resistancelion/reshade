@@ -56,8 +56,10 @@ std::shared_ptr<reshade::input> reshade::input::register_window(window_handle wi
 
 	if (insert.second || insert.first->second.expired())
 	{
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(DEBUG) << "Starting input capture for window " << window << " ...";
+#endif
 #endif
 
 		const auto instance = std::make_shared<input>(window);
@@ -581,13 +583,16 @@ HOOK_EXPORT BOOL WINAPI HookPostMessageW(HWND hWnd, UINT Msg, WPARAM wParam, LPA
 
 HOOK_EXPORT BOOL WINAPI HookRegisterRawInputDevices(PCRAWINPUTDEVICE pRawInputDevices, UINT uiNumDevices, UINT cbSize)
 {
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Redirecting " << "RegisterRawInputDevices" << '(' << "pRawInputDevices = " << pRawInputDevices << ", uiNumDevices = " << uiNumDevices << ", cbSize = " << cbSize << ')' << " ...";
+#endif
 #endif
 	for (UINT i = 0; i < uiNumDevices; ++i)
 	{
 		const auto &device = pRawInputDevices[i];
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(DEBUG) << "> Dumping device registration at index " << i << ":";
 		LOG(DEBUG) << "  +-----------------------------------------+-----------------------------------------+";
@@ -599,6 +604,7 @@ HOOK_EXPORT BOOL WINAPI HookRegisterRawInputDevices(PCRAWINPUTDEVICE pRawInputDe
 		LOG(DEBUG) << "  | TargetWindow                            | " << std::setw(39) << device.hwndTarget << " |";
 		LOG(DEBUG) << "  +-----------------------------------------+-----------------------------------------+";
 #endif
+#endif
 
 		if (device.usUsagePage != 1 || device.hwndTarget == nullptr)
 			continue;
@@ -608,7 +614,9 @@ HOOK_EXPORT BOOL WINAPI HookRegisterRawInputDevices(PCRAWINPUTDEVICE pRawInputDe
 
 	if (!reshade::hooks::call(HookRegisterRawInputDevices)(pRawInputDevices, uiNumDevices, cbSize))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "RegisterRawInputDevices" << " failed with error code " << GetLastError() << '.';
+#endif
 		return FALSE;
 	}
 

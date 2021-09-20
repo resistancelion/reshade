@@ -49,8 +49,9 @@ static lockfree_table<VkRenderPass, std::vector<render_pass_data>, 4096> s_rende
 
 VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkCreateDevice" << '(' << "physicalDevice = " << physicalDevice << ", pCreateInfo = " << pCreateInfo << ", pAllocator = " << pAllocator << ", pDevice = " << pDevice << ')' << " ...";
-
+#endif
 	assert(pCreateInfo != nullptr && pDevice != nullptr);
 
 	// Look for layer link info if installed as a layer (provided by the Vulkan loader)
@@ -87,11 +88,12 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 
 	if (trampoline == nullptr) // Unable to resolve next 'vkCreateDevice' function in the call chain
 		return VK_ERROR_INITIALIZATION_FAILED;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping enabled device extensions:";
+
 	for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i)
 		LOG(INFO) << "  " << pCreateInfo->ppEnabledExtensionNames[i];
-
+#endif
 	auto enum_queue_families = s_instance_dispatch.at(dispatch_key_from_handle(physicalDevice)).GetPhysicalDeviceQueueFamilyProperties;
 	assert(enum_queue_families != nullptr);
 	auto enum_device_extensions = s_instance_dispatch.at(dispatch_key_from_handle(physicalDevice)).EnumerateDeviceExtensionProperties;
@@ -111,9 +113,10 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 		// Find the first queue family which supports graphics and has at least one queue
 		if (pCreateInfo->pQueueCreateInfos[i].queueCount > 0 && (queue_families[queue_family_index].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
 		{
+#ifndef LOG_DISABLE_ALL
 			if (pCreateInfo->pQueueCreateInfos[i].pQueuePriorities[0] < 1.0f)
 				LOG(WARN) << "Vulkan queue used for rendering has a low priority (" << pCreateInfo->pQueueCreateInfos[i].pQueuePriorities[0] << ").";
-
+#endif
 			graphics_queue_family_index = queue_family_index;
 			break;
 		}
@@ -136,8 +139,9 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 	if (std::find_if(enabled_extensions.begin(), enabled_extensions.end(),
 		[](const char *name) { return strcmp(name, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0; }) == enabled_extensions.end())
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping device because it is not created with the \"" VK_KHR_SWAPCHAIN_EXTENSION_NAME "\" extension.";
-
+#endif
 		graphics_queue_family_index  = std::numeric_limits<uint32_t>::max();
 	}
 
@@ -161,15 +165,18 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 
 			if (required)
 			{
+#ifndef LOG_DISABLE_ALL
 				LOG(ERROR) << "Required extension \"" << name << "\" is not supported on this device. Initialization failed.";
-
+#endif
 				// Reset queue family index to prevent ReShade initialization
 				graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
 			}
+#ifndef LOG_DISABLE_ALL
 			else
 			{
 				LOG(WARN)  << "Optional extension \"" << name << "\" is not supported on this device.";
 			}
+#endif
 
 			return false;
 		};
@@ -186,10 +193,12 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 		add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, false);
 #endif
 	}
+#ifndef LOG_DISABLE_ALL
 	else
 	{
 		LOG(WARN) << "Skipping device because it is not created with a graphics queue.";
 	}
+#endif
 
 	VkDeviceCreateInfo create_info = *pCreateInfo;
 	create_info.enabledExtensionCount = uint32_t(enabled_extensions.size());
@@ -206,7 +215,9 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 	const VkResult result = trampoline(physicalDevice, &create_info, pAllocator, pDevice);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateDevice" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -337,8 +348,9 @@ VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevi
 }
 void     VKAPI_CALL vkDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkDestroyDevice" << '(' << "device = " << device << ", pAllocator = " << pAllocator << ')' << " ...";
-
+#endif
 	s_command_buffer_data.clear(); // Reset all command buffer data
 
 	// Get function pointer before removing it next
@@ -351,8 +363,9 @@ void     VKAPI_CALL vkDestroyDevice(VkDevice device, const VkAllocationCallbacks
 
 VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkCreateSwapchainKHR" << '(' << "device = " << device << ", pCreateInfo = " << pCreateInfo << ", pAllocator = " << pAllocator << ", pSwapchain = " << pSwapchain << ')' << " ...";
-
+#endif
 	assert(pCreateInfo != nullptr && pSwapchain != nullptr);
 
 	auto &device_data = s_device_dispatch.at(dispatch_key_from_handle(device));
@@ -413,7 +426,7 @@ VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreat
 			create_info.pQueueFamilyIndices = queue_family_list.data();
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping swap chain description:";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
 	LOG(INFO) << "  | Parameter                               | Value                                   |";
@@ -437,11 +450,13 @@ VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreat
 	LOG(INFO) << "  | clipped                                 | " << std::setw(39) << (create_info.clipped ? "true" : "false") << " |";
 	LOG(INFO) << "  | oldSwapchain                            | " << std::setw(39) << create_info.oldSwapchain << " |";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
-
+#endif
 	const VkResult result = device_data.dispatch_table.CreateSwapchainKHR(device, &create_info, pAllocator, pSwapchain);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateSwapchainKHR" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -476,16 +491,18 @@ VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreat
 	{
 		s_vulkan_runtimes.emplace(*pSwapchain, nullptr);
 	}
-
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning Vulkan swapchain " << *pSwapchain << '.';
+#endif
 #endif
 	return VK_SUCCESS;
 }
 void     VKAPI_CALL vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "vkDestroySwapchainKHR" << '(' << device << ", " << swapchain << ", " << pAllocator << ')' << " ...";
-
+#endif
 	// Remove runtime from global list
 	if (reshade::vulkan::runtime_vk *runtime;
 		s_vulkan_runtimes.erase(swapchain, runtime))
@@ -560,7 +577,9 @@ VkResult VKAPI_CALL vkCreateImage(VkDevice device, const VkImageCreateInfo *pCre
 	const VkResult result = trampoline(device, &create_info, pAllocator, pImage);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateImage" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -586,7 +605,9 @@ VkResult VKAPI_CALL vkCreateImageView(VkDevice device, const VkImageViewCreateIn
 	const VkResult result = trampoline(device, pCreateInfo, pAllocator, pView);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateImageView" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -612,7 +633,9 @@ VkResult VKAPI_CALL vkCreateRenderPass(VkDevice device, const VkRenderPassCreate
 	const VkResult result = trampoline(device, pCreateInfo, pAllocator, pRenderPass);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateRenderPass" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -642,7 +665,9 @@ VkResult VKAPI_CALL vkCreateRenderPass2(VkDevice device, const VkRenderPassCreat
 	const VkResult result = trampoline(device, pCreateInfo, pAllocator, pRenderPass);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateRenderPass2" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -678,7 +703,9 @@ VkResult VKAPI_CALL vkCreateFramebuffer(VkDevice device, const VkFramebufferCrea
 	const VkResult result = trampoline(device, pCreateInfo, pAllocator, pFramebuffer);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkCreateFramebuffer" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 
@@ -708,7 +735,9 @@ VkResult VKAPI_CALL vkAllocateCommandBuffers(VkDevice device, const VkCommandBuf
 	const VkResult result = trampoline(device, pAllocateInfo, pCommandBuffers);
 	if (result != VK_SUCCESS)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "vkAllocateCommandBuffers" << " failed with error code " << result << '.';
+#endif
 		return result;
 	}
 

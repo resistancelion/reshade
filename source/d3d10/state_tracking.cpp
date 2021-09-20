@@ -146,7 +146,9 @@ bool reshade::d3d10::state_tracking::update_depthstencil_clear_texture(D3D10_TEX
 
 	if (HRESULT hr = _device->CreateTexture2D(&desc, nullptr, &_depthstencil_clear_texture); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create depth-stencil texture! HRESULT is " << hr << '.';
+#endif
 		return false;
 	}
 

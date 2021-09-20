@@ -123,9 +123,9 @@ bool reshade::runtime::on_init(input::window_handle window)
 
 	_preset_save_success = true;
 	_screenshot_save_success = true;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Recreated runtime environment on runtime " << this << '.';
-
+#endif
 	return true;
 }
 void reshade::runtime::on_reset()
@@ -144,8 +144,9 @@ void reshade::runtime::on_reset()
 		destroy_texture(*_imgui_font_atlas);
 	_rebuild_font_atlas = true;
 #endif
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Destroyed runtime environment on runtime " << this << '.';
+#endif
 }
 void reshade::runtime::on_present()
 {
@@ -646,10 +647,12 @@ bool reshade::runtime::load_effect(const std::filesystem::path &source_file, con
 
 	if ( effect.compiled && (effect.preprocessed || source_cached))
 	{
+#ifndef LOG_DISABLE_ALL
 		if (effect.errors.empty())
 			LOG(INFO) << "Successfully loaded " << source_file << '.';
 		else
 			LOG(WARN) << "Successfully loaded " << source_file << " with warnings:\n" << effect.errors;
+#endif
 		return true;
 	}
 	else
@@ -660,6 +663,7 @@ bool reshade::runtime::load_effect(const std::filesystem::path &source_file, con
 			LOG(ERROR) << "Failed to load " << source_file << '!';
 		else
 			LOG(ERROR) << "Failed to load " << source_file << ":\n" << effect.errors;
+
 		return false;
 	}
 }
@@ -699,9 +703,9 @@ void reshade::runtime::load_effects()
 void reshade::runtime::load_textures()
 {
 	_last_texture_reload_successfull = true;
-
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Loading image files for textures ...";
-
+#endif
 	for (texture &texture : _textures)
 	{
 		if (texture.impl == nullptr || !texture.semantic.empty())
@@ -739,7 +743,9 @@ void reshade::runtime::load_textures()
 
 		if (filedata == nullptr)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Source " << source_path << " for texture '" << texture.unique_name << "' could not be loaded! Make sure it is of a compatible file format.";
+#endif
 			_last_texture_reload_successfull = false;
 			continue;
 		}
@@ -747,8 +753,9 @@ void reshade::runtime::load_textures()
 		// Need to potentially resize image data to the texture dimensions
 		if (texture.width != uint32_t(width) || texture.height != uint32_t(height))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(INFO) << "Resizing image data for texture '" << texture.unique_name << "' from " << width << "x" << height << " to " << texture.width << "x" << texture.height << " ...";
-
+#endif
 			std::vector<uint8_t> resized(texture.width * texture.height * 4);
 			stbir_resize_uint8(filedata, width, height, 0, resized.data(), texture.width, texture.height, 0, 4);
 			upload_texture(texture, resized.data());
@@ -1756,8 +1763,9 @@ void reshade::runtime::save_screenshot(const std::wstring &postfix, const bool s
 
 	std::filesystem::path screenshot_path = g_reshade_base_path / _screenshot_path / filename;
 
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Saving screenshot to " << screenshot_path << " ...";
-
+#endif
 	_screenshot_save_success = false; // Default to a save failure unless it is reported to succeed below
 
 	if (std::vector<uint8_t> data(_width * _height * 4); capture_screenshot(data.data()))
@@ -1797,7 +1805,9 @@ void reshade::runtime::save_screenshot(const std::wstring &postfix, const bool s
 
 	if (!_screenshot_save_success)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to write screenshot to " << screenshot_path << '!';
+#endif
 	}
 	else if (_screenshot_include_preset && should_save_preset && ini_file::flush_cache(_current_preset_path))
 	{

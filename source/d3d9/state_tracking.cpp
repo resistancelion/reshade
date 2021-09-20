@@ -220,7 +220,9 @@ bool reshade::d3d9::state_tracking::update_depthstencil_replacement(com_ptr<IDir
 
 	if (desc.Format == D3DFMT_UNKNOWN)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Your graphics card is missing support for at least one of the 'INTZ', 'DF24' or 'DF16' texture formats. Cannot create depth replacement texture.";
+#endif
 		return false;
 	}
 
@@ -228,7 +230,9 @@ bool reshade::d3d9::state_tracking::update_depthstencil_replacement(com_ptr<IDir
 
 	if (HRESULT hr = _device->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_DEPTHSTENCIL, desc.Format, D3DPOOL_DEFAULT, &texture, nullptr); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create depth replacement texture! HRESULT is " << hr << '.';
+#endif
 		return false;
 	}
 

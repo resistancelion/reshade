@@ -73,8 +73,10 @@ bool D3D11DeviceContext::check_and_upgrade_interface(REFIID riid)
 			IUnknown *new_interface = nullptr;
 			if (FAILED(_orig->QueryInterface(riid, reinterpret_cast<void **>(&new_interface))))
 				return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(DEBUG) << "Upgraded ID3D11DeviceContext" << _interface_version << " object " << this << " to ID3D11DeviceContext" << version << '.';
+#endif
 #endif
 			_orig->Release();
 			_orig = static_cast<ID3D11DeviceContext *>(new_interface);
@@ -116,11 +118,12 @@ ULONG   STDMETHODCALLTYPE D3D11DeviceContext::Release()
 	_state.reset(this == _device->_immediate_context);
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for ID3D11DeviceContext" << _interface_version << " object " << this << " is inconsistent.";
-
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed ID3D11DeviceContext" << _interface_version << " object " << this << '.';
+#endif
 #endif
 	delete this;
 

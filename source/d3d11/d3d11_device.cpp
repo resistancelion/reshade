@@ -42,8 +42,10 @@ bool D3D11Device::check_and_upgrade_interface(REFIID riid)
 			IUnknown *new_interface = nullptr;
 			if (FAILED(_orig->QueryInterface(riid, reinterpret_cast<void **>(&new_interface))))
 				return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(DEBUG) << "Upgraded ID3D11Device" << _interface_version << " object " << this << " to ID3D11Device" << version << '.';
+#endif
 #endif
 			_orig->Release();
 			_orig = static_cast<ID3D11Device *>(new_interface);
@@ -101,11 +103,13 @@ ULONG   STDMETHODCALLTYPE D3D11Device::Release()
 
 	// Note: At this point the immediate context should have been deleted by the release above (so do not access it)
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig != 0) // Verify internal reference count
 		LOG(WARN) << "Reference count for ID3D11Device" << _interface_version << " object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed ID3D11Device" << _interface_version << " object " << this << '.';
+#endif
 #endif
 	delete this;
 
@@ -133,7 +137,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture2D(const D3D11_TEXTURE2D_DES
 		new_desc.Format = make_dxgi_format_typeless(new_desc.Format);
 		new_desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateTexture2D(&new_desc, pInitialData, ppTexture2D);
 	if (FAILED(hr))
 	{
@@ -155,6 +159,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture2D(const D3D11_TEXTURE2D_DES
 	}
 
 	return hr;
+#else
+	return _orig->CreateTexture2D(&new_desc, pInitialData, ppTexture2D);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture3D(const D3D11_TEXTURE3D_DESC *pDesc, const D3D11_SUBRESOURCE_DATA *pInitialData, ID3D11Texture3D **ppTexture3D)
 {
@@ -196,7 +203,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateShaderResourceView(ID3D11Resource *
 			}
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateShaderResourceView(pResource, pDesc, ppSRView);
 	if (FAILED(hr))
 	{
@@ -209,6 +216,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateShaderResourceView(ID3D11Resource *
 	}
 
 	return hr;
+#else
+	return _orig->CreateShaderResourceView(pResource, pDesc, ppSRView);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateUnorderedAccessView(ID3D11Resource *pResource, const D3D11_UNORDERED_ACCESS_VIEW_DESC *pDesc, ID3D11UnorderedAccessView **ppUAView)
 {
@@ -254,7 +264,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateDepthStencilView(ID3D11Resource *pR
 			}
 		}
 	}
-
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = _orig->CreateDepthStencilView(pResource, pDesc, ppDepthStencilView);
 	if (FAILED(hr))
 	{
@@ -267,6 +277,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateDepthStencilView(ID3D11Resource *pR
 	}
 
 	return hr;
+#else
+	return  _orig->CreateDepthStencilView(pResource, pDesc, ppDepthStencilView);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateInputLayout(const D3D11_INPUT_ELEMENT_DESC *pInputElementDescs, UINT NumElements, const void *pShaderBytecodeWithInputSignature, SIZE_T BytecodeLength, ID3D11InputLayout **ppInputLayout)
 {
@@ -334,23 +347,27 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateCounter(const D3D11_COUNTER_DESC *p
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext(UINT ContextFlags, ID3D11DeviceContext **ppDeferredContext)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "ID3D11Device::CreateDeferredContext" << '(' << "this = " << this << ", ContextFlags = " << ContextFlags << ", ppDeferredContext = " << ppDeferredContext << ')' << " ...";
-
+#endif
 	if (ppDeferredContext == nullptr)
 		return E_INVALIDARG;
 
 	const HRESULT hr = _orig->CreateDeferredContext(ContextFlags, ppDeferredContext);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D11Device::CreateDeferredContext" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
 	const auto device_context_proxy = new D3D11DeviceContext(this, *ppDeferredContext);
 	*ppDeferredContext = device_context_proxy;
-
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "> Returning ID3D11DeviceContext object " << device_context_proxy << '.';
+#endif
 #endif
 	return hr;
 }
@@ -431,8 +448,9 @@ void    STDMETHODCALLTYPE D3D11Device::GetImmediateContext1(ID3D11DeviceContext1
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext1(UINT ContextFlags, ID3D11DeviceContext1 **ppDeferredContext)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "ID3D11Device1::CreateDeferredContext1" << '(' << "this = " << this << ", ContextFlags = " << ContextFlags << ", ppDeferredContext = " << ppDeferredContext << ')' << " ...";
-
+#endif
 	if (ppDeferredContext == nullptr)
 		return E_INVALIDARG;
 
@@ -441,15 +459,19 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext1(UINT ContextFlags,
 	const HRESULT hr = static_cast<ID3D11Device1 *>(_orig)->CreateDeferredContext1(ContextFlags, ppDeferredContext);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D11Device1::CreateDeferredContext1" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
 	const auto device_context_proxy = new D3D11DeviceContext(this, *ppDeferredContext);
 	*ppDeferredContext = device_context_proxy;
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "> Returning ID3D11DeviceContext1 object " << device_context_proxy << '.';
+#endif
 #endif
 	return hr;
 }
@@ -492,8 +514,9 @@ void    STDMETHODCALLTYPE D3D11Device::GetImmediateContext2(ID3D11DeviceContext2
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext2(UINT ContextFlags, ID3D11DeviceContext2 **ppDeferredContext)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "ID3D11Device2::CreateDeferredContext2" << '(' << "this = " << this << ", ContextFlags = " << ContextFlags << ", ppDeferredContext = " << ppDeferredContext << ')' << " ...";
-
+#endif
 	if (ppDeferredContext == nullptr)
 		return E_INVALIDARG;
 
@@ -502,15 +525,19 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext2(UINT ContextFlags,
 	const HRESULT hr = static_cast<ID3D11Device2 *>(_orig)->CreateDeferredContext2(ContextFlags, ppDeferredContext);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D11Device1::CreateDeferredContext2" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
 	const auto device_context_proxy = new D3D11DeviceContext(this, *ppDeferredContext);
 	*ppDeferredContext = device_context_proxy;
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "> Returning ID3D11DeviceContext2 object " << device_context_proxy << '.';
+#endif
 #endif
 	return hr;
 }
@@ -539,6 +566,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture2D1(const D3D11_TEXTURE2D_DE
 	}
 
 	assert(_interface_version >= 3);
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = static_cast<ID3D11Device3 *>(_orig)->CreateTexture2D1(&new_desc, pInitialData, ppTexture2D);
 	if (FAILED(hr))
 	{
@@ -561,6 +589,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture2D1(const D3D11_TEXTURE2D_DE
 	}
 
 	return hr;
+#else
+	return static_cast<ID3D11Device3*>(_orig)->CreateTexture2D1(&new_desc, pInitialData, ppTexture2D);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateTexture3D1(const D3D11_TEXTURE3D_DESC1 *pDesc1, const D3D11_SUBRESOURCE_DATA *pInitialData, ID3D11Texture3D1 **ppTexture3D)
 {
@@ -619,6 +650,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateShaderResourceView1(ID3D11Resource 
 	}
 
 	assert(_interface_version >= 3);
+#ifndef LOG_DISABLE_ALL
 	const HRESULT hr = static_cast<ID3D11Device3 *>(_orig)->CreateShaderResourceView1(pResource, pDesc1, ppSRView1);
 	if (FAILED(hr))
 	{
@@ -631,6 +663,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateShaderResourceView1(ID3D11Resource 
 	}
 
 	return hr;
+#else
+	return static_cast<ID3D11Device3*>(_orig)->CreateShaderResourceView1(pResource, pDesc1, ppSRView1);
+#endif
 }
 HRESULT STDMETHODCALLTYPE D3D11Device::CreateUnorderedAccessView1(ID3D11Resource *pResource, const D3D11_UNORDERED_ACCESS_VIEW_DESC1 *pDesc1, ID3D11UnorderedAccessView1 **ppUAView1)
 {
@@ -664,15 +699,19 @@ HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext3(UINT ContextFlags,
 	const HRESULT hr = static_cast<ID3D11Device3 *>(_orig)->CreateDeferredContext3(ContextFlags, ppDeferredContext);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "ID3D11Device1::CreateDeferredContext3" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
 	const auto device_context_proxy = new D3D11DeviceContext(this, *ppDeferredContext);
 	*ppDeferredContext = device_context_proxy;
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "> Returning ID3D11DeviceContext3 object " << device_context_proxy << '.';
+#endif
 #endif
 	return hr;
 }

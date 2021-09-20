@@ -15,11 +15,14 @@ HOOK_EXPORT ATOM WINAPI HookRegisterClassA(const WNDCLASSA *lpWndClass)
 
 	if (wndclass.hInstance == GetModuleHandle(nullptr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Redirecting " << "RegisterClassA" << '(' << "lpWndClass = " << lpWndClass << " { " << wndclass.lpszClassName << " }" << ')' << " ...";
-
+#endif
 		if ((wndclass.style & CS_OWNDC) == 0)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+#endif
 
 			wndclass.style |= CS_OWNDC;
 		}
@@ -35,11 +38,15 @@ HOOK_EXPORT ATOM WINAPI HookRegisterClassW(const WNDCLASSW *lpWndClass)
 
 	if (wndclass.hInstance == GetModuleHandle(nullptr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Redirecting " << "RegisterClassW" << '(' << "lpWndClass = " << lpWndClass << " { " << wndclass.lpszClassName << " }" << ')' << " ...";
+#endif
 
 		if ((wndclass.style & CS_OWNDC) == 0)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+#endif
 
 			wndclass.style |= CS_OWNDC;
 		}
@@ -55,11 +62,14 @@ HOOK_EXPORT ATOM WINAPI HookRegisterClassExA(const WNDCLASSEXA *lpWndClassEx)
 
 	if (wndclass.hInstance == GetModuleHandle(nullptr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Redirecting " << "RegisterClassExA" << '(' << "lpWndClassEx = " << lpWndClassEx << " { " << wndclass.lpszClassName << " }" << ')' << " ...";
-
+#endif
 		if ((wndclass.style & CS_OWNDC) == 0)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+#endif
 
 			wndclass.style |= CS_OWNDC;
 		}
@@ -75,11 +85,15 @@ HOOK_EXPORT ATOM WINAPI HookRegisterClassExW(const WNDCLASSEXW *lpWndClassEx)
 
 	if (wndclass.hInstance == GetModuleHandle(nullptr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Redirecting " << "RegisterClassExW" << '(' << "lpWndClassEx = " << lpWndClassEx << " { " << wndclass.lpszClassName << " }" << ')' << " ...";
+#endif
 
 		if ((wndclass.style & CS_OWNDC) == 0)
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+#endif
 
 			wndclass.style |= CS_OWNDC;
 		}

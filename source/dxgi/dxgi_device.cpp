@@ -39,8 +39,10 @@ bool DXGIDevice::check_and_upgrade_interface(REFIID riid)
 			IUnknown *new_interface = nullptr;
 			if (FAILED(_orig->QueryInterface(riid, reinterpret_cast<void **>(&new_interface))))
 				return false;
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 			LOG(DEBUG) << "Upgraded IDXGIDevice" << _interface_version << " object " << this << " to IDXGIDevice" << version << '.';
+#endif
 #endif
 			_orig->Release();
 			_orig = static_cast<IDXGIDevice1 *>(new_interface);
@@ -79,11 +81,13 @@ ULONG   STDMETHODCALLTYPE DXGIDevice::Release()
 		return _orig->Release(), ref;
 
 	const ULONG ref_orig = _orig->Release();
+#ifndef LOG_DISABLE_ALL
 	if (ref_orig > 1) // Verify internal reference count against one instead of zero because D3D device still holds a reference
 		LOG(WARN) << "Reference count for IDXGIDevice" << _interface_version << " object " << this << " is inconsistent.";
 
 #if RESHADE_VERBOSE_LOG
 	LOG(DEBUG) << "Destroyed IDXGIDevice" << _interface_version << " object " << this << '.';
+#endif
 #endif
 	delete this;
 

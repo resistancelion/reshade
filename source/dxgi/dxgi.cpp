@@ -16,7 +16,7 @@ extern bool is_windows7();
 
 // Use this to filter out internal device created by the DXGI runtime in the D3D device creation hooks 
 extern thread_local bool g_in_dxgi_runtime;
-
+#ifndef LOG_DISABLE_ALL
 static void dump_format(DXGI_FORMAT format)
 {
 	if (const char *format_string = format_to_string(format); format_string != nullptr)
@@ -40,9 +40,10 @@ static void dump_sample_desc(const DXGI_SAMPLE_DESC &desc)
 		break;
 	}
 }
-
+#endif
 static void dump_and_modify_swapchain_desc(DXGI_SWAP_CHAIN_DESC &desc)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping swap chain description:";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
 	LOG(INFO) << "  | Parameter                               | Value                                   |";
@@ -61,7 +62,7 @@ static void dump_and_modify_swapchain_desc(DXGI_SWAP_CHAIN_DESC &desc)
 	LOG(INFO) << "  | SwapEffect                              | " << std::setw(39) << desc.SwapEffect   << " |";
 	LOG(INFO) << "  | Flags                                   | " << std::setw(39) << std::hex << desc.Flags << std::dec << " |";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
-
+#endif
 	if (reshade::global_config().get("APP", "ForceWindowed"))
 	{
 		desc.Windowed = TRUE;
@@ -86,6 +87,7 @@ static void dump_and_modify_swapchain_desc(DXGI_SWAP_CHAIN_DESC &desc)
 }
 static void dump_and_modify_swapchain_desc(DXGI_SWAP_CHAIN_DESC1 &desc, DXGI_SWAP_CHAIN_FULLSCREEN_DESC &fullscreen_desc)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "> Dumping swap chain description:";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
 	LOG(INFO) << "  | Parameter                               | Value                                   |";
@@ -105,6 +107,7 @@ static void dump_and_modify_swapchain_desc(DXGI_SWAP_CHAIN_DESC1 &desc, DXGI_SWA
 	LOG(INFO) << "  | AlphaMode                               | " << std::setw(39) << desc.AlphaMode   << " |";
 	LOG(INFO) << "  | Flags                                   | " << std::setw(39) << std::hex << desc.Flags << std::dec << " |";
 	LOG(INFO) << "  +-----------------------------------------+-----------------------------------------+";
+#endif
 
 	if (reshade::global_config().get("APP", "ForceWindowed"))
 	{
@@ -161,7 +164,9 @@ static void init_swapchain_proxy(T *&swapchain, UINT direct3d_version, const com
 
 	if ((usage & DXGI_USAGE_RENDER_TARGET_OUTPUT) == 0)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "Skipping swap chain due to missing 'DXGI_USAGE_RENDER_TARGET_OUTPUT' flag.";
+#endif
 	}
 	else if (direct3d_version == 10)
 	{
@@ -183,15 +188,19 @@ static void init_swapchain_proxy(T *&swapchain, UINT direct3d_version, const com
 
 			swapchain_proxy = new DXGISwapChain(command_queue.get(), swapchain3.get());
 		}
+#ifndef LOG_DISABLE_ALL
 		else
 		{
 			LOG(WARN) << "Skipping swap chain because it is missing support for the IDXGISwapChain3 interface.";
 		}
+#endif
 	}
+#ifndef LOG_DISABLE_ALL
 	else
 	{
 		LOG(WARN) << "Skipping swap chain because it was created without a (hooked) Direct3D device.";
 	}
+#endif
 
 	if (swapchain_proxy != nullptr)
 	{
@@ -199,8 +208,10 @@ static void init_swapchain_proxy(T *&swapchain, UINT direct3d_version, const com
 		reshade::global_config().get("APP", "ForceResolution", swapchain_proxy->_force_resolution);
 		reshade::global_config().get("APP", "Force10BitFormat", swapchain_proxy->_force_10_bit_format);
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 		LOG(INFO) << "Returning IDXGISwapChain" << swapchain_proxy->_interface_version << " object " << swapchain_proxy << '.';
+#endif
 #endif
 		swapchain = swapchain_proxy;
 	}
@@ -208,13 +219,14 @@ static void init_swapchain_proxy(T *&swapchain, UINT direct3d_version, const com
 
 HRESULT STDMETHODCALLTYPE IDXGIFactory_CreateSwapChain(IDXGIFactory *pFactory, IUnknown *pDevice, DXGI_SWAP_CHAIN_DESC *pDesc, IDXGISwapChain **ppSwapChain)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDXGIFactory::CreateSwapChain" << '('
 		<<   "this = " << pFactory
 		<< ", pDevice = " << pDevice
 		<< ", pDesc = " << pDesc
 		<< ", ppSwapChain = " << ppSwapChain
 		<< ')' << " ...";
-
+#endif
 	if (pDevice == nullptr || pDesc == nullptr || ppSwapChain == nullptr)
 		return DXGI_ERROR_INVALID_CALL;
 
@@ -229,17 +241,20 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory_CreateSwapChain(IDXGIFactory *pFactory, I
 	g_in_dxgi_runtime = false;
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "IDXGIFactory::CreateSwapChain" << " failed with error code " << hr << '.';
-		return hr;
+#endif
 	}
-
-	init_swapchain_proxy(*ppSwapChain, direct3d_version, device_proxy, desc.BufferUsage);
+	else {
+		init_swapchain_proxy(*ppSwapChain, direct3d_version, device_proxy, desc.BufferUsage);
+	}
 
 	return hr;
 }
 
 HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForHwnd(IDXGIFactory2 *pFactory, IUnknown *pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 *pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *pFullscreenDesc, IDXGIOutput *pRestrictToOutput, IDXGISwapChain1 **ppSwapChain)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDXGIFactory2::CreateSwapChainForHwnd" << '('
 		<<   "this = " << pFactory
 		<< ", pDevice = " << pDevice
@@ -249,6 +264,7 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForHwnd(IDXGIFactory2 *pF
 		<< ", pRestrictToOutput = " << pRestrictToOutput
 		<< ", ppSwapChain = " << ppSwapChain
 		<< ')' << " ...";
+#endif
 
 	if (pDevice == nullptr || pDesc == nullptr || ppSwapChain == nullptr)
 		return DXGI_ERROR_INVALID_CALL;
@@ -269,16 +285,19 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForHwnd(IDXGIFactory2 *pF
 	g_in_dxgi_runtime = false;
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "IDXGIFactory2::CreateSwapChainForHwnd" << " failed with error code " << hr << '.';
-		return hr;
+#endif
 	}
-
-	init_swapchain_proxy(*ppSwapChain, direct3d_version, device_proxy, desc.BufferUsage);
+	else {
+		init_swapchain_proxy(*ppSwapChain, direct3d_version, device_proxy, desc.BufferUsage);
+	}
 
 	return hr;
 }
 HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForCoreWindow(IDXGIFactory2 *pFactory, IUnknown *pDevice, IUnknown *pWindow, const DXGI_SWAP_CHAIN_DESC1 *pDesc, IDXGIOutput *pRestrictToOutput, IDXGISwapChain1 **ppSwapChain)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDXGIFactory2::CreateSwapChainForCoreWindow" << '('
 		<<   "this = " << pFactory
 		<< ", pDevice = " << pDevice
@@ -287,6 +306,7 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForCoreWindow(IDXGIFactor
 		<< ", pRestrictToOutput = " << pRestrictToOutput
 		<< ", ppSwapChain = " << ppSwapChain
 		<< ')' << " ...";
+#endif
 
 	if (pDevice == nullptr || pDesc == nullptr || ppSwapChain == nullptr)
 		return DXGI_ERROR_INVALID_CALL;
@@ -303,7 +323,9 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForCoreWindow(IDXGIFactor
 	g_in_dxgi_runtime = false;
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "IDXGIFactory2::CreateSwapChainForCoreWindow" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -313,6 +335,7 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForCoreWindow(IDXGIFactor
 }
 HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForComposition(IDXGIFactory2 *pFactory, IUnknown *pDevice, const DXGI_SWAP_CHAIN_DESC1 *pDesc, IDXGIOutput *pRestrictToOutput, IDXGISwapChain1 **ppSwapChain)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "IDXGIFactory2::CreateSwapChainForComposition" << '('
 		<<   "this = " << pFactory
 		<< ", pDevice = " << pDevice
@@ -320,7 +343,7 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForComposition(IDXGIFacto
 		<< ", pRestrictToOutput = " << pRestrictToOutput
 		<< ", ppSwapChain = " << ppSwapChain
 		<< ')' << " ...";
-
+#endif
 	if (pDevice == nullptr || pDesc == nullptr || ppSwapChain == nullptr)
 		return DXGI_ERROR_INVALID_CALL;
 
@@ -336,7 +359,9 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForComposition(IDXGIFacto
 	g_in_dxgi_runtime = false;
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "IDXGIFactory2::CreateSwapChainForComposition" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -347,20 +372,24 @@ HRESULT STDMETHODCALLTYPE IDXGIFactory2_CreateSwapChainForComposition(IDXGIFacto
 
 HOOK_EXPORT HRESULT WINAPI CreateDXGIFactory(REFIID riid, void **ppFactory)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "CreateDXGIFactory" << '(' << "riid = " << riid << ", ppFactory = " << ppFactory << ')' << " ...";
 	LOG(INFO) << "> Passing on to " << "CreateDXGIFactory1" << ':';
-
+#endif
 	// DXGI 1.1 should always be available, so to simplify code just call 'CreateDXGIFactory' which is otherwise identical
 	return CreateDXGIFactory1(riid, ppFactory);
 }
 HOOK_EXPORT HRESULT WINAPI CreateDXGIFactory1(REFIID riid, void **ppFactory)
 {
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "CreateDXGIFactory1" << '(' << "riid = " << riid << ", ppFactory = " << ppFactory << ')' << " ...";
-
+#endif
 	const HRESULT hr = reshade::hooks::call(CreateDXGIFactory1)(riid, ppFactory);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "CreateDXGIFactory1" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -375,9 +404,10 @@ HOOK_EXPORT HRESULT WINAPI CreateDXGIFactory1(REFIID riid, void **ppFactory)
 		reshade::hooks::install("IDXGIFactory2::CreateSwapChainForCoreWindow", vtable_from_instance(factory2.get()), 16, reinterpret_cast<reshade::hook::address>(IDXGIFactory2_CreateSwapChainForCoreWindow));
 		reshade::hooks::install("IDXGIFactory2::CreateSwapChainForComposition", vtable_from_instance(factory2.get()), 24, reinterpret_cast<reshade::hook::address>(IDXGIFactory2_CreateSwapChainForComposition));
 	}
-
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning IDXGIFactory object " << factory << '.';
+#endif
 #endif
 	return hr;
 }
@@ -389,23 +419,27 @@ HOOK_EXPORT HRESULT WINAPI CreateDXGIFactory2(UINT Flags, REFIID riid, void **pp
 	// IDXGIFactory3 {25483823-CD46-4C7D-86CA-47AA95B837BD}
 	// IDXGIFactory4 {1BC6EA02-EF36-464F-BF0C-21CA39E5168A}
 
+#ifndef LOG_DISABLE_ALL
 	LOG(INFO) << "Redirecting " << "CreateDXGIFactory2" << '(' << "Flags = " << std::hex << Flags << std::dec << ", riid = " << riid << ", ppFactory = " << ppFactory << ')' << " ...";
-
+#endif
 	static const auto trampoline = is_windows7() ? nullptr : reshade::hooks::call(CreateDXGIFactory2);
 
 	// CreateDXGIFactory2 is not available on Windows 7, so fall back to CreateDXGIFactory1 if the application calls it
 	// This needs to happen because some applications only check if CreateDXGIFactory2 exists, which is always the case if they load ReShade, to decide whether to call it or CreateDXGIFactory1
 	if (trampoline == nullptr)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "> Passing on to " << "CreateDXGIFactory1" << ':';
-
+#endif
 		return CreateDXGIFactory1(riid, ppFactory);
 	}
 
 	const HRESULT hr = trampoline(Flags, riid, ppFactory);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(WARN) << "CreateDXGIFactory2" << " failed with error code " << hr << '.';
+#endif
 		return hr;
 	}
 
@@ -420,8 +454,10 @@ HOOK_EXPORT HRESULT WINAPI CreateDXGIFactory2(UINT Flags, REFIID riid, void **pp
 		reshade::hooks::install("IDXGIFactory2::CreateSwapChainForComposition", vtable_from_instance(factory2.get()), 24, reinterpret_cast<reshade::hook::address>(IDXGIFactory2_CreateSwapChainForComposition));
 	}
 
+#ifndef LOG_DISABLE_ALL
 #if RESHADE_VERBOSE_LOG
 	LOG(INFO) << "Returning IDXGIFactory object " << factory << '.';
+#endif
 #endif
 	return hr;
 }

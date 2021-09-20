@@ -62,7 +62,10 @@ reshade::d3d9::runtime_d3d9::runtime_d3d9(IDirect3DDevice9 *device, IDirect3DSwa
 		// Only the last 5 digits represents the version specific to a driver
 		// See https://docs.microsoft.com/windows-hardware/drivers/display/version-numbers-for-display-drivers
 		const DWORD driver_version = LOWORD(adapter_desc.DriverVersion.LowPart) + (HIWORD(adapter_desc.DriverVersion.LowPart) % 10) * 10000;
+
+#ifndef LOG_DISABLE_ALL
 		LOG(INFO) << "Running on " << adapter_desc.Description << " Driver " << (driver_version / 100) << '.' << (driver_version % 100);
+#endif
 	}
 
 	_num_samplers = caps.MaxSimultaneousTextures;
@@ -287,7 +290,9 @@ bool reshade::d3d9::runtime_d3d9::capture_screenshot(uint8_t *buffer) const
 {
 	if (_color_bit_depth != 8 && _color_bit_depth != 10)
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Screenshots are not supported for back buffer format " << _backbuffer_format << '!';
+#endif
 		return false;
 	}
 
@@ -295,8 +300,10 @@ bool reshade::d3d9::runtime_d3d9::capture_screenshot(uint8_t *buffer) const
 	com_ptr<IDirect3DSurface9> intermediate;
 	if (HRESULT hr = _device->CreateOffscreenPlainSurface(_width, _height, _backbuffer_format, D3DPOOL_SYSTEMMEM, &intermediate, nullptr); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create system memory texture for screenshot capture! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << _width << ", Height = " << _height << ", Format = " << _backbuffer_format;
+#endif
 		return false;
 	}
 
@@ -448,7 +455,9 @@ bool reshade::d3d9::runtime_d3d9::init_effect(size_t index)
 
 		if (FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to create shader for entry point '" << entry_point.name << "'! HRESULT is " << hr << '.';
+#endif
 			return false;
 		}
 	}
@@ -463,7 +472,9 @@ bool reshade::d3d9::runtime_d3d9::init_effect(size_t index)
 	{
 		if (info.binding >= ARRAYSIZE(technique_init.sampler_states))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Cannot bind sampler '" << info.unique_name << "' since it exceeds the maximum number of allowed sampler slots in " << "D3D9" << " (" << info.binding << ", allowed are up to " << ARRAYSIZE(technique_init.sampler_states) << ").";
+#endif
 			return false;
 		}
 
@@ -519,7 +530,9 @@ bool reshade::d3d9::runtime_d3d9::init_effect(size_t index)
 			{
 				if (k > _num_simultaneous_rendertargets)
 				{
+#ifndef LOG_DISABLE_ALL
 					LOG(WARN) << "Device only supports " << _num_simultaneous_rendertargets << " simultaneous render targets, but pass " << pass_index << " in technique '" << technique.name << "' uses more, which are ignored.";
+#endif
 					break;
 				}
 
@@ -686,7 +699,9 @@ bool reshade::d3d9::runtime_d3d9::init_effect(size_t index)
 
 			if (FAILED(hr))
 			{
+#ifndef LOG_DISABLE_ALL
 				LOG(ERROR) << "Failed to create state block for pass " << pass_index << " in technique '" << technique.name << "'! HRESULT is " << hr << '.';
+#endif
 				return false;
 			}
 		}
@@ -811,10 +826,12 @@ bool reshade::d3d9::runtime_d3d9::init_texture(texture &texture)
 			usage |= D3DUSAGE_AUTOGENMIPMAP;
 			levels = 0;
 		}
+#ifndef LOG_DISABLE_ALL
 		else
 		{
 			LOG(WARN) << "Auto-generated mipmap levels are not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'.";
 		}
+#endif
 	}
 
 	if (texture.render_target)
@@ -824,17 +841,21 @@ bool reshade::d3d9::runtime_d3d9::init_texture(texture &texture)
 		{
 			usage |= D3DUSAGE_RENDERTARGET;
 		}
+#ifndef LOG_DISABLE_ALL
 		else
 		{
 			LOG(WARN) << "Render target usage is not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'.";
 		}
+#endif
 	}
 
 	HRESULT hr = _device->CreateTexture(texture.width, texture.height, levels, usage, format, D3DPOOL_DEFAULT, &impl->texture, nullptr);
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << texture.width << ", Height = " << texture.height << ", Levels = " << levels << ", Usage = " << usage << ", Format = " << format;
+#endif
 		return false;
 	}
 
@@ -856,8 +877,10 @@ void reshade::d3d9::runtime_d3d9::upload_texture(const texture &texture, const u
 	com_ptr<IDirect3DTexture9> intermediate;
 	if (HRESULT hr = _device->CreateTexture(texture.width, texture.height, 1, 0, desc.Format, D3DPOOL_SYSTEMMEM, &intermediate, nullptr); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create system memory texture for updating texture '" << texture.unique_name << "'! HRESULT is " << hr << '.';
 		LOG(DEBUG) << "> Details: Width = " << texture.width << ", Height = " << texture.height << ", Levels = " << "1" << ", Usage = " << "0" << ", Format = " << desc.Format;
+#endif
 		return;
 	}
 
@@ -893,7 +916,9 @@ void reshade::d3d9::runtime_d3d9::upload_texture(const texture &texture, const u
 				mapped_data[x + 3] = pixels[x + 3];
 		break;
 	default:
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Texture upload is not supported for format " << static_cast<unsigned int>(texture.format) << " of texture '" << texture.unique_name << "'!";
+#endif
 		break;
 	}
 
@@ -901,7 +926,9 @@ void reshade::d3d9::runtime_d3d9::upload_texture(const texture &texture, const u
 
 	if (HRESULT hr = _device->UpdateTexture(intermediate.get(), impl->texture.get()); FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to update texture '" << texture.unique_name << "' from system memory texture! HRESULT is " << hr << '.';
+#endif
 		return;
 	}
 }
@@ -1092,7 +1119,9 @@ bool reshade::d3d9::runtime_d3d9::init_imgui_resources()
 
 	if (FAILED(hr))
 	{
+#ifndef LOG_DISABLE_ALL
 		LOG(ERROR) << "Failed to create state block! HRESULT is " << hr << '.';
+#endif
 		return false;
 	}
 
@@ -1333,7 +1362,9 @@ void reshade::d3d9::runtime_d3d9::update_depth_texture_bindings(com_ptr<IDirect3
 	{
 		if (HRESULT hr = _depth_surface->GetContainer(IID_PPV_ARGS(&_depth_texture)); FAILED(hr))
 		{
+#ifndef LOG_DISABLE_ALL
 			LOG(ERROR) << "Failed to retrieve texture from depth surface! HRESULT is " << hr << '.';
+#endif
 		}
 		else
 		{
